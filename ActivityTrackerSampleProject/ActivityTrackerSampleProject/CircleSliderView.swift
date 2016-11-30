@@ -13,18 +13,29 @@ class CircleSliderView: UIView {
     
     internal var shapeLayer = CAShapeLayer()
     internal var backgroundLayer = CAShapeLayer()
+    internal let label = UILabel()
+    internal let iconView = UIImageView()
+    var title: String = ""
     var color = UIColor.clear
     var fraction: Double = 0.0
     var thickness: Int = 30
+    var shouldAnimate: Bool = true
+    internal var cgThickness: CGFloat {
+        return CGFloat(thickness)
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
+        setupLabel()
+        setupIcon()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setup()
+        setupLabel()
+        setupIcon()
     }
     
     internal func setup() {
@@ -40,8 +51,7 @@ class CircleSliderView: UIView {
         
         // The Bezier path that we made needs to be converted to
         // a CGPath before it can be used on a layer.
-        let angle = getAngle(fraction: fraction)
-        shapeLayer.path = createPath(thickness: thickness, angleRadians: angle, percentComplete: 0.0).cgPath
+        shapeLayer.path = createInitialPath(thickness: thickness).cgPath
         
         // apply other properties related to the path
         shapeLayer.strokeColor = UIColor.clear.cgColor
@@ -53,18 +63,33 @@ class CircleSliderView: UIView {
         self.layer.addSublayer(shapeLayer)
     }
     
-    func configure(thickness: Int, fraction: Double, color: UIColor) {
+    func configure(thickness: Int, fraction: Double, color: UIColor, title: String?, iconImage: UIImage?, shouldAnimate: Bool) {
         self.color = color
         self.fraction = fraction
         self.thickness = thickness
+        self.title = title ?? ""
+        self.iconView.image = iconImage ?? nil
+        self.shouldAnimate = shouldAnimate
+    }
+    
+    func initialize() {
+        let path = createInitialPath(thickness: thickness)
+        applySettings(path: path)
     }
     
     func applySettings() {
+        let angle = getAngle(fraction: fraction)
+        let path = createPath(thickness: thickness, angleRadians: angle, percentComplete: 1.0)
+        applySettings(path: path)
+    }
+    
+    internal func applySettings(path: UIBezierPath) {
         shapeLayer.fillColor = color.cgColor
         backgroundLayer.fillColor = color.withAlphaComponent(0.5).cgColor
         backgroundLayer.path = createBackgroundPath().cgPath
-        let angle = getAngle(fraction: fraction)
-        shapeLayer.path = createPath(thickness: thickness, angleRadians: angle, percentComplete: 1.0).cgPath
+        shapeLayer.path = path.cgPath
+        label.text = title.uppercased()
+        label.textColor = color
     }
     
     func applySettingsAndAnimate(afterDelay: Double, completion: @escaping () -> Void) {
@@ -107,7 +132,6 @@ class CircleSliderView: UIView {
     }
     
     internal func createPath(thickness: Int, angleRadians: Double, percentComplete: Double) -> UIBezierPath {
-        let cgThickness = CGFloat(thickness)
         let topCenter = CGPoint(x: frame.width / 2, y: 0)
         let cgAngle = CGFloat(angleRadians)
         let path = UIBezierPath()
@@ -130,7 +154,6 @@ class CircleSliderView: UIView {
     }
     
     internal func createBackgroundPath() -> UIBezierPath {
-        let cgThickness = CGFloat(thickness)
         let topCenter = CGPoint(x: frame.width / 2, y: 0)
         let path = UIBezierPath()
         let viewCenter = CGPoint(x: frame.width / 2, y: frame.height / 2)
@@ -145,9 +168,45 @@ class CircleSliderView: UIView {
         return path
     }
     
+    internal func createInitialPath(thickness: Int) -> UIBezierPath {
+        return createPath(thickness: thickness, angleRadians: 0.0, percentComplete: 1.0)
+    }
+    
+    internal func setupLabel() {
+        label.textColor = color
+        label.font = UIFont(name: "Arial Rounded MT Bold", size: cgThickness)
+        label.textAlignment = .right
+        label.numberOfLines = 1
+        //label.adjustsFontSizeToFitWidth = true
+        addSubview(label)
+    }
+    
+    internal func setupIcon() {
+        iconView.contentMode = .scaleAspectFit
+        iconView.tintColor = UIColor.black
+        addSubview(iconView)
+    }
+    
+    func frameThatFitsInside() -> CGRect {
+        let height = frame.height - (2 * CGFloat(thickness + (thickness / 10)))
+        let x = frame.minX + CGFloat(thickness + (thickness / 10))
+        let y = frame.minY + CGFloat(thickness + (thickness / 10))
+        return CGRect(x: x, y: y, width: height, height: height)
+    }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
-        applySettings()
+        var path: UIBezierPath!
+        if shouldAnimate {
+            path = createInitialPath(thickness: thickness)
+        } else {
+            let angle = getAngle(fraction: fraction)
+            path = createPath(thickness: thickness, angleRadians: angle, percentComplete: 1.0)
+        }
+        applySettings(path: path)
+        label.frame = CGRect(x: -100, y: 0, width: frame.width/2 - 20 + 100, height: cgThickness)
+        let center = frame.width/2
+        iconView.frame = CGRect(x: center - cgThickness / 4, y: cgThickness / 4, width: cgThickness / 2, height: cgThickness / 2)
     }
     
 }
