@@ -37,21 +37,28 @@ class ViewController: UIViewController {
         let upImage = UIImage(named: "Up Arrow")?.withRenderingMode(.alwaysTemplate)
         let rightImage = UIImage(named: "Right Arrow")?.withRenderingMode(.alwaysTemplate)
         let doubleRightImage = UIImage(named: "Double Right Arrow")?.withRenderingMode(.alwaysTemplate)
-        outerCicle.configure(thickness: thickness, fraction: fraction1, color: color1, title: "Move", iconImage: rightImage, shouldAnimate: true)
-        middleCircle.configure(thickness: thickness, fraction: fraction2, color: color2, title: "Exercise", iconImage: doubleRightImage, shouldAnimate: true)
-        innerCircle.configure(thickness: thickness, fraction: fraction3, color: color3, title: "Stand", iconImage: upImage, shouldAnimate: true)
         
-        outerCicle.initialize()
-        middleCircle.initialize()
-        innerCircle.initialize()
+        
+        outerCicle.configure(thickness: thickness, fraction: fraction1, color: color1, title: "Move", iconImage: rightImage)
+        middleCircle.configure(thickness: thickness, fraction: fraction2, color: color2, title: "Exercise", iconImage: doubleRightImage)
+        innerCircle.configure(thickness: thickness, fraction: fraction3, color: color3, title: "Stand", iconImage: upImage)
+        
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
+        outerCicle.mode = .normal
+        middleCircle.mode = .normal
+        innerCircle.mode = .normal
+        
         outerCicle.applySettingsAndAnimate(afterDelay: 0.0, completion: {})
         middleCircle.applySettingsAndAnimate(afterDelay: 0.5, completion: {})
         innerCircle.applySettingsAndAnimate(afterDelay: 1.0, completion: {})
+        
+        //innerCircle.applySettings()
+        //middleCircle.applySettings()
+        //outerCicle.applySettings()
     }
 
     override func viewDidLayoutSubviews() {
@@ -59,7 +66,15 @@ class ViewController: UIViewController {
         
         //I'm setting frames for the circle sliders manually.  Make sure the insets match the thicknesses of the cirlces for a seamless fit.
         
-        outerCicle.frame = CGRect(x: 20, y: 100, width: view.frame.width - 40, height: view.frame.width - 40)
+        outerCicle.frame = CGRect(x: view.frame.width / 10, y: view.frame.height / 4, width: view.frame.width - view.frame.width / 5, height: view.frame.height / 2)
+        let frame = outerCicle.frameThatFitsInside()
+        middleCircle.frame = frame
+        innerCircle.frame = middleCircle.frameThatFitsInside()
+        
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        outerCicle.frame = CGRect(x: size.width / 10, y: size.height / 4, width: size.width - size.width / 5, height: size.height / 2)
         middleCircle.frame = outerCicle.frameThatFitsInside()
         innerCircle.frame = middleCircle.frameThatFitsInside()
     }
